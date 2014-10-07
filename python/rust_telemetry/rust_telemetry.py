@@ -41,7 +41,7 @@ def run():
     pygame.key.set_repeat(50, 50)
 
     running = True
-    steering_pwm = 185 # center
+    steering_pwm = 90 # center
     drive_pwm = 190 # stop
 
     while running:
@@ -50,14 +50,14 @@ def run():
                 running = False
             elif event.type == KEYDOWN:
                 if event.key == K_RIGHT:
-                    steering_pwm += 5
-                    if steering_pwm > 253:
-                        steering_pwm = 253
+                    steering_pwm += 10
+                    if steering_pwm > 145:
+                        steering_pwm = 145
                     print 'steering pwm %u' % steering_pwm
                 elif event.key == K_LEFT:
-                    steering_pwm -= 5
-                    if steering_pwm < 140:
-                        steering_pwm = 140
+                    steering_pwm -= 10
+                    if steering_pwm < 40:
+                        steering_pwm = 40
                     print 'steering pwm %u' % steering_pwm
                 elif event.key == K_DOWN:
                     drive_pwm += 1
@@ -71,9 +71,10 @@ def run():
                     print 'drive pwm %u' % drive_pwm
                 else:
                     #kill
-                    steering_pwm = 185 # center
+                    steering_pwm = 90 # center
                     drive_pwm = 190 # stop
 
+                time.sleep(0.05)
                 motor_command = struct.pack("<BBB", CB_MOTOR_COMMAND, steering_pwm, drive_pwm)
                 send_packet(motor_command)
 
