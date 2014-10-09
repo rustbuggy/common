@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description="RustTelemetry", formatter_class=ar
 parser.add_argument("--port", type=str, default="/dev/tty.usbserial-A8008iwL", help="usb serial port device eg. /dev/ttyUSB0")
 args = parser.parse_args()
 
-s = serial.Serial(args.port, 57600, timeout=0.01);
+s = serial.Serial(args.port, 57600, timeout=0.0001);
 s.flushInput()
 s.flushOutput()
 
@@ -26,69 +26,73 @@ BC_TELEMETRY = 0x00
 CB_MOTOR_COMMAND = 0x01
 
 def send_packet(data):
-    data = hdlc.add_checksum(data)
-    data = hdlc.escape_delimit(data)
-    s.write(data)
+	data = hdlc.add_checksum(data)
+	data = hdlc.escape_delimit(data)
+	s.write(data)
 
 
 
 def run():
-    pygame.init()
-    pygame.display.set_caption("RustTelemetry")
+	pygame.init()
+	pygame.display.set_caption("RustTelemetry")
 
-    screen = pygame.display.set_mode((600,480))
-    # by default the key repeat is disabled, enable it
-    pygame.key.set_repeat(50, 50)
+	screen = pygame.display.set_mode((600,480))
+	# by default the key repeat is disabled, enable it
+	pygame.key.set_repeat(50, 50)
 
-    running = True
-    steering_pwm = 90 # center
-    drive_pwm = 190 # stop
+	running = True
+	steering_pwm = 90 # center
+	drive_pwm = 190 # stop
 
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == KEYDOWN:
-                if event.key == K_RIGHT:
-                    steering_pwm += 10
-                    if steering_pwm > 145:
-                        steering_pwm = 145
-                    print 'steering pwm %u' % steering_pwm
-                elif event.key == K_LEFT:
-                    steering_pwm -= 10
-                    if steering_pwm < 40:
-                        steering_pwm = 40
-                    print 'steering pwm %u' % steering_pwm
-                elif event.key == K_DOWN:
-                    drive_pwm += 1
-                    if drive_pwm > 255:
-                        drive_pwm = 255
-                    print 'drive pwm %u' % drive_pwm
-                elif event.key == K_UP:
-                    drive_pwm -= 1
-                    if drive_pwm < 135:
-                        drive_pwm = 135
-                    print 'drive pwm %u' % drive_pwm
-                else:
-                    #kill
-                    steering_pwm = 90 # center
-                    drive_pwm = 190 # stop
+	while running:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				running = False
+			elif event.type == KEYDOWN:
+				if event.key == K_RIGHT:
+					steering_pwm += 10
+					if steering_pwm > 145:
+						steering_pwm = 145
+					print 'steering pwm %u' % steering_pwm
+				elif event.key == K_LEFT:
+					steering_pwm -= 10
+					if steering_pwm < 40:
+						steering_pwm = 40
+					print 'steering pwm %u' % steering_pwm
+				elif event.key == K_DOWN:
+					drive_pwm += 1
+					if drive_pwm > 255:
+						drive_pwm = 255
+					print 'drive pwm %u' % drive_pwm
+				elif event.key == K_UP:
+					drive_pwm -= 1
+					if drive_pwm < 135:
+						drive_pwm = 135
+					print 'drive pwm %u' % drive_pwm
+				elif event.key == K_ESCAPE:
+					running = False
+					continue
+				else:
+					#kill
+					steering_pwm = 90 # center
+					drive_pwm = 190 # stop
 
-                time.sleep(0.05)
-                motor_command = struct.pack("<BBB", CB_MOTOR_COMMAND, steering_pwm, drive_pwm)
-                send_packet(motor_command)
+				#time.sleep(0.05)
+				motor_command = struct.pack("<BBB", CB_MOTOR_COMMAND, steering_pwm, drive_pwm)
+				send_packet(motor_command)
 
-        # read serial
-        data = s.read(20)
-        if data:
-            parser.put(data)
+		# read serial
+		data = s.read(20)
+		if data:
+			parser.put(data)
 
-        for packet in parser:
-            header, = struct.unpack("<B", packet[:1])
-            if header == BC_TELEMETRY:
-                left, right, front_left, front_right = struct.unpack("<BBBB", packet[1:])
-                #print "l %u r %u fl %u fr %u" % (left, right, front_left, front_right)
+		for packet in parser:
+			header, = struct.unpack("<B", packet[:1])
+			if header == BC_TELEMETRY:
+				left, leftewma, right, front_left, front_right, mc_x, mc_y, steer, steerPwm, speed, speedPwm = struct.unpack("<BBBBBii?i?i", packet[1:])
+				print "l %3u r %3u fl %3u fr %3u\tmc(%2u, %2u)\tsteer (%u): %3u drive (%u): %3u" % (left, right, front_left, front_right, mc_x, mc_y, steer, steerPwm, speed, speedPwm)
+				sys.stdout.flush()
 
 
 if __name__=="__main__":
-    run()
+	run()
