@@ -11,6 +11,8 @@ from pygame.locals import *
 sys.path.append('../lib')
 import hdlc
 
+FIX_DIV = 65536.0
+
 parser = argparse.ArgumentParser(description="RustTelemetry", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--port", type=str, default="/dev/tty.usbserial-A8008iwL", help="usb serial port device eg. /dev/ttyUSB0")
 args = parser.parse_args()
@@ -42,7 +44,7 @@ def run():
 
 	running = True
 	steering_pwm = 90 # center
-	drive_pwm = 190 # stop
+	drive_pwm = 92 # stop
 
 	while running:
 		for event in pygame.event.get():
@@ -50,24 +52,24 @@ def run():
 				running = False
 			elif event.type == KEYDOWN:
 				if event.key == K_RIGHT:
-					steering_pwm += 10
-					if steering_pwm > 145:
-						steering_pwm = 145
+					steering_pwm += 1
+					if steering_pwm > 180:
+						steering_pwm = 180
 					print 'steering pwm %u' % steering_pwm
 				elif event.key == K_LEFT:
-					steering_pwm -= 10
-					if steering_pwm < 40:
-						steering_pwm = 40
+					steering_pwm -= 1
+					if steering_pwm < 0:
+						steering_pwm = 0
 					print 'steering pwm %u' % steering_pwm
 				elif event.key == K_DOWN:
 					drive_pwm += 1
-					if drive_pwm > 255:
-						drive_pwm = 255
+					if drive_pwm > 180:
+						drive_pwm = 180
 					print 'drive pwm %u' % drive_pwm
 				elif event.key == K_UP:
 					drive_pwm -= 1
-					if drive_pwm < 135:
-						drive_pwm = 135
+					if drive_pwm < 0:
+						drive_pwm = 0
 					print 'drive pwm %u' % drive_pwm
 				elif event.key == K_ESCAPE:
 					running = False
@@ -75,7 +77,7 @@ def run():
 				else:
 					#kill
 					steering_pwm = 90 # center
-					drive_pwm = 190 # stop
+					drive_pwm = 92 # stop
 
 				#time.sleep(0.05)
 				motor_command = struct.pack("<BBB", CB_MOTOR_COMMAND, steering_pwm, drive_pwm)
@@ -89,8 +91,9 @@ def run():
 		for packet in parser:
 			header, = struct.unpack("<B", packet[:1])
 			if header == BC_TELEMETRY:
-				left, leftewma, right, front_left, front_right, mc_x, mc_y, steer, steerPwm, speed, speedPwm = struct.unpack("<BBBBBii?i?i", packet[1:])
-				print "l %3u r %3u fl %3u fr %3u\tmc(%2u, %2u)\tsteer (%u): %3u drive (%u): %3u" % (left, right, front_left, front_right, mc_x, mc_y, steer, steerPwm, speed, speedPwm)
+				left, right, front_left, front_right, mc_x, mc_y, mc_dist, mc_angle, steer, steerPwm, speed, speedPwm = struct.unpack("<iiiiiiii?i?i", packet[1:])
+				#print("l %3.2f r %3.2f fl %3.2f fr %3.2f" % (left / FIX_DIV, right / FIX_DIV, front_left / FIX_DIV, front_right / FIX_DIV))
+				print("mc(%.2f, %.2f; %.2f, %.2f)\tsteer (%u): %3u drive (%u): %3u\n" % (mc_x / FIX_DIV, mc_y / FIX_DIV, mc_dist / FIX_DIV, mc_angle / FIX_DIV, steer, steerPwm, speed, speedPwm))
 				sys.stdout.flush()
 
 
