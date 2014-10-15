@@ -55,12 +55,13 @@ def run():
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				running = False
-			elif event.type == KEYDOWN:
+			elif event.type == KEYUP:
 				if event.key == K_SPACE:
 					automatic = 0 if automatic == 1 else 1
 					steering_pwm = STEERING_PWM_DEFAULT # center
 					drive_pwm = DRIVING_PWM_DEFAULT # stop
-				elif event.key == K_RIGHT:
+			elif event.type == KEYDOWN:
+				if event.key == K_RIGHT:
 					steering_pwm += 1
 					if steering_pwm > 180:
 						steering_pwm = 180
@@ -80,11 +81,18 @@ def run():
 					if drive_pwm < 0:
 						drive_pwm = 0
 					print 'drive pwm %u' % drive_pwm
+				elif event.key == K_SPACE:
+					pass # handled in event.type == KEYUP
 				elif event.key == K_ESCAPE:
 					running = False
+					#kill
+					automatic = AUTOMATIC_DEFAULT
+					steering_pwm = STEERING_PWM_DEFAULT # center
+					drive_pwm = DRIVING_PWM_DEFAULT # stop
 					continue
 				else:
 					#kill
+					automatic = AUTOMATIC_DEFAULT
 					steering_pwm = STEERING_PWM_DEFAULT # center
 					drive_pwm = DRIVING_PWM_DEFAULT # stop
 
