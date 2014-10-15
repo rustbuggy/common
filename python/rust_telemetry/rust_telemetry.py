@@ -100,7 +100,7 @@ def run():
 		for packet in parser:
 			header, = struct.unpack("<B", packet[:1])
 			if header == BC_TELEMETRY:
-				left, right, front_left, front_right, mc_x, mc_y, mc_dist, mc_angle, steer, steerPwm, speed, speedPwm = struct.unpack("<iiiiiiii?i?i", packet[1:])
+				time, left, right, front_left, front_right, mc_x, mc_y, mc_dist, mc_angle, steer, steerPwm, speed, speedPwm = struct.unpack("<iiiiiiiii?i?i", packet[1:])
 				#print("l %3.2f r %3.2f fl %3.2f fr %3.2f" % (left / FIX_DIV, right / FIX_DIV, front_left / FIX_DIV, front_right / FIX_DIV))
 				print("mc(%.2f, %.2f; %.2f, %.2f)\tsteer (%u): %3u drive (%u): %3u\n" % (mc_x / FIX_DIV, mc_y / FIX_DIV, mc_dist / FIX_DIV, mc_angle / FIX_DIV, steer, steerPwm, speed, speedPwm))
 				sys.stdout.flush()
