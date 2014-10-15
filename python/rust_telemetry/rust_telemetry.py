@@ -27,6 +27,10 @@ parser = hdlc.HdlcChecksummed()
 BC_TELEMETRY = 0x00
 CB_MOTOR_COMMAND = 0x01
 
+AUTOMATIC_DEFAULT = 0
+STEERING_PWM_DEFAULT = 90
+DRIVING_PWM_DEFAULT = 92
+
 def send_packet(data):
 	data = hdlc.add_checksum(data)
 	data = hdlc.escape_delimit(data)
@@ -43,15 +47,20 @@ def run():
 	pygame.key.set_repeat(50, 50)
 
 	running = True
-	steering_pwm = 90 # center
-	drive_pwm = 92 # stop
+	automatic = AUTOMATIC_DEFAULT
+	steering_pwm = STEERING_PWM_DEFAULT # center
+	drive_pwm = DRIVING_PWM_DEFAULT # stop
 
 	while running:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				running = False
 			elif event.type == KEYDOWN:
-				if event.key == K_RIGHT:
+				if event.key == K_SPACE:
+					automatic = 0 if automatic == 1 else 1
+					steering_pwm = STEERING_PWM_DEFAULT # center
+					drive_pwm = DRIVING_PWM_DEFAULT # stop
+				elif event.key == K_RIGHT:
 					steering_pwm += 1
 					if steering_pwm > 180:
 						steering_pwm = 180
@@ -76,11 +85,11 @@ def run():
 					continue
 				else:
 					#kill
-					steering_pwm = 90 # center
-					drive_pwm = 92 # stop
+					steering_pwm = STEERING_PWM_DEFAULT # center
+					drive_pwm = DRIVING_PWM_DEFAULT # stop
 
 				#time.sleep(0.05)
-				motor_command = struct.pack("<BBB", CB_MOTOR_COMMAND, steering_pwm, drive_pwm)
+				motor_command = struct.pack("<BBBB", CB_MOTOR_COMMAND, automatic, steering_pwm, drive_pwm)
 				send_packet(motor_command)
 
 		# read serial
