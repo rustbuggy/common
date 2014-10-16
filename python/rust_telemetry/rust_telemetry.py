@@ -24,8 +24,8 @@ s.flushOutput()
 parser = hdlc.HdlcChecksummed()
 
 # header bytes
-BC_TELEMETRY = 0x00
-CB_MOTOR_COMMAND = 0x01
+BC_TELEMETRY = 0x01
+CB_MOTOR_COMMAND = 0x02
 
 AUTOMATIC_DEFAULT = 0
 STEERING_PWM_DEFAULT = 90
@@ -71,12 +71,12 @@ def run():
 					if steering_pwm < 0:
 						steering_pwm = 0
 					print 'steering pwm %u' % steering_pwm
-				elif event.key == K_DOWN:
+				elif event.key == K_UP:
 					drive_pwm += 1
 					if drive_pwm > 180:
 						drive_pwm = 180
 					print 'drive pwm %u' % drive_pwm
-				elif event.key == K_UP:
+				elif event.key == K_DOWN:
 					drive_pwm -= 1
 					if drive_pwm < 0:
 						drive_pwm = 0
@@ -108,8 +108,8 @@ def run():
 		for packet in parser:
 			header, = struct.unpack("<B", packet[:1])
 			if header == BC_TELEMETRY:
-				time, left, right, front_left, front_right, mc_x, mc_y, mc_dist, mc_angle, steer, steerPwm, speed, speedPwm = struct.unpack("<iiiiiiiii?i?i", packet[1:])
-				#print("l %3.2f r %3.2f fl %3.2f fr %3.2f" % (left / FIX_DIV, right / FIX_DIV, front_left / FIX_DIV, front_right / FIX_DIV))
+				time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, steer, steerPwm, speed, speedPwm = struct.unpack("<IiiiiiiiiiBiBi", packet[1:])
+				#print("l %3.2f r %3.2f fl %3.2f fr %3.2f f %3.2f" % (left / FIX_DIV, right / FIX_DIV, front_left / FIX_DIV, front_right / FIX_DIV, front / FIX_DIV))
 				print("mc(%.2f, %.2f; %.2f, %.2f)\tsteer (%u): %3u drive (%u): %3u\n" % (mc_x / FIX_DIV, mc_y / FIX_DIV, mc_dist / FIX_DIV, mc_angle / FIX_DIV, steer, steerPwm, speed, speedPwm))
 				sys.stdout.flush()
 
