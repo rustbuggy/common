@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(description="RustTelemetry", formatter_class=ar
 parser.add_argument("--port", type=str, default="/dev/tty.usbserial-A8008iwL", help="usb serial port device eg. /dev/ttyUSB0")
 args = parser.parse_args()
 
-s = serial.Serial(args.port, 57600, timeout=0.0001);
+s = serial.Serial(args.port, 57600, timeout=0.1);
 s.flushInput()
 s.flushOutput()
 
