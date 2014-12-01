@@ -73,11 +73,13 @@ def run():
 					print 'steering pwm %u' % steering_pwm
 				elif event.key == K_UP:
 					drive_pwm += 1
+					#drive_pwm = 105
 					if drive_pwm > 180:
 						drive_pwm = 180
 					print 'drive pwm %u' % drive_pwm
 				elif event.key == K_DOWN:
 					drive_pwm -= 1
+					#drive_pwm = 60
 					if drive_pwm < 0:
 						drive_pwm = 0
 					print 'drive pwm %u' % drive_pwm
@@ -108,9 +110,9 @@ def run():
 		for packet in parser:
 			header, = struct.unpack("<B", packet[:1])
 			if header == BC_TELEMETRY:
-				time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm = struct.unpack("<Iiiiiiiiiiii", packet[1:])
-				#print("l %3.2f r %3.2f fl %3.2f fr %3.2f f %3.2f" % (left / FIX_DIV, right / FIX_DIV, front_left / FIX_DIV, front_right / FIX_DIV, front / FIX_DIV))
-				print("mc(%.2f, %.2f; %.2f, %.2f)\tsteer: %3u drive: %3u\n" % (mc_x / FIX_DIV, mc_y / FIX_DIV, mc_dist / FIX_DIV, mc_angle / FIX_DIV, steerPwm, speedPwm))
+				time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm, battery = struct.unpack("<IiiiiiiiiiiiH", packet[1:])
+				#print("battery: %u" % battery)
+				print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left / FIX_DIV, front_left / FIX_DIV, front / FIX_DIV, front_right / FIX_DIV, right / FIX_DIV, mc_x / FIX_DIV, mc_y / FIX_DIV, mc_dist / FIX_DIV, mc_angle / FIX_DIV, steerPwm, speedPwm))
 				sys.stdout.flush()
 
 
