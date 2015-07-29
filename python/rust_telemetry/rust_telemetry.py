@@ -3,6 +3,7 @@ import time
 import datetime
 import argparse
 import struct
+import math
 
 import serial
 import pygame
@@ -15,7 +16,9 @@ SCR_WIDTH = 640
 SCR_HEIGHT = 480
 
 black = (0,0,0)
+light_gray = (224,224,224)
 white = (255,255,255)
+red = (255,0,0)
 
 FIX_DIV = 65536.0
 
@@ -54,7 +57,7 @@ def send_packet(data):
     s.write(data)
 
 def p(x, y):
-    return (SCR_WIDTH / 2 + 3*x, SCR_HEIGHT - 3*y - 20)
+    return (int(SCR_WIDTH / 2 + 3*x), int(SCR_HEIGHT - 3*y - 20))
 
 def run():
     time = left = right = front_left = front_right = front = mc_x = mc_y = mc_dist = mc_angle = steerPwm = speedPwm = battery = 0
@@ -137,6 +140,13 @@ def run():
                 front /= FIX_DIV
                 front_right /= FIX_DIV
                 right /= FIX_DIV
+                mc_x /= FIX_DIV
+                mc_y /= FIX_DIV
+                mc_dist /= FIX_DIV
+                mc_angle /= FIX_DIV
+                #mc_angle_rad = math.radians(mc_angle)
+                #mc_x_calc = mc_dist * math.cos(mc_angle_rad)
+                #mc_y_calc = mc_dist * math.sin(mc_angle_rad)
 
                 a1 = left * VAL_SQRT_1_DIV_2
                 lx = -(a1 + SIDE_X_OFFSET)
@@ -152,14 +162,19 @@ def run():
                 ry = a2 - SIDE_Y_OFFSET
 
                 #print("battery: %u" % battery)
-                print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x / FIX_DIV, mc_y / FIX_DIV, mc_dist / FIX_DIV, mc_angle / FIX_DIV, steerPwm, speedPwm))
+                print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
                 sys.stdout.flush()
 
         # erase the screen
         screen.fill(white)
         
         if lx != 0:
-            pygame.draw.lines(screen, black, False, [p(lx, 0), p(lx, ly), p(flx, fly), p(fx, fy), p(frx, fry), p(rx, ry), p(rx, 0), p(lx, 0)], 3)
+            pts = [p(lx, 0), p(lx, ly), p(flx, fly), p(fx, fy), p(frx, fry), p(rx, ry), p(rx, 0)]
+            pygame.draw.polygon(screen, light_gray, pts, 0)
+            pygame.draw.polygon(screen, black, pts, 3)
+            pygame.draw.lines(screen, red, False, [p(0,0), p(mc_x, mc_y)], 3)
+            pygame.draw.circle(screen, black, p(0, 0), 10, 0)
+            pygame.draw.circle(screen, red, p(mc_x, mc_y), 10, 0)
 
         # update the screen
         pygame.display.update()
