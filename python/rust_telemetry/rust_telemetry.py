@@ -12,8 +12,8 @@ from pygame.locals import *
 sys.path.append('../lib')
 import hdlc
 
-SCR_WIDTH = 640
-SCR_HEIGHT = 480
+SCR_WIDTH = 800
+SCR_HEIGHT = 600
 
 black = (0,0,0)
 light_gray = (224,224,224)
@@ -57,7 +57,7 @@ def send_packet(data):
     s.write(data)
 
 def p(x, y):
-    return (int(SCR_WIDTH / 2 + 3*x), int(SCR_HEIGHT - 3*y - 20))
+    return (int(SCR_WIDTH / 2 + 3*x), int(SCR_HEIGHT - 3*y - SCR_HEIGHT / 8))
 
 def run():
     time = left = right = front_left = front_right = front = mc_x = mc_y = mc_dist = mc_angle = steerPwm = speedPwm = battery = 0
@@ -65,6 +65,8 @@ def run():
 
     pygame.init()
     pygame.display.set_caption("RustTelemetry")
+    # initialize font; must be called after 'pygame.init()' to avoid 'Font not Initialized' error
+    myfont = pygame.font.SysFont("monospace", 20)
 
     screen = pygame.display.set_mode((SCR_WIDTH, SCR_HEIGHT))
     # by default the key repeat is disabled, enable it
@@ -74,7 +76,7 @@ def run():
     automatic = AUTOMATIC_DEFAULT
     steering_pwm = STEERING_PWM_DEFAULT # center
     drive_pwm = DRIVING_PWM_DEFAULT # stop
-
+    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -86,22 +88,26 @@ def run():
                     drive_pwm = DRIVING_PWM_DEFAULT # stop
             elif event.type == KEYDOWN:
                 if event.key == K_RIGHT:
+                    automatic = 0
                     steering_pwm += 1
                     if steering_pwm > 180:
                         steering_pwm = 180
                     print 'steering pwm %u' % steering_pwm
                 elif event.key == K_LEFT:
+                    automatic = 0
                     steering_pwm -= 1
                     if steering_pwm < 0:
                         steering_pwm = 0
                     print 'steering pwm %u' % steering_pwm
                 elif event.key == K_UP:
+                    automatic = 0
                     drive_pwm += 1
                     #drive_pwm = 105
                     if drive_pwm > 180:
                         drive_pwm = 180
                     print 'drive pwm %u' % drive_pwm
                 elif event.key == K_DOWN:
+                    automatic = 0
                     drive_pwm -= 1
                     #drive_pwm = 60
                     if drive_pwm < 0:
@@ -134,7 +140,7 @@ def run():
         for packet in parser:
             header, = struct.unpack("<B", packet[:1])
             if header == BC_TELEMETRY:
-                time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm, battery = struct.unpack("<IiiiiiiiiiiiH", packet[1:])
+                time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, automatic, steerPwm, speedPwm, battery = struct.unpack("<IiiiiiiiiiBBBH", packet[1:])
                 left /= FIX_DIV
                 front_left /= FIX_DIV
                 front /= FIX_DIV
@@ -175,6 +181,9 @@ def run():
             pygame.draw.lines(screen, red, False, [p(0,0), p(mc_x, mc_y)], 3)
             pygame.draw.circle(screen, black, p(0, 0), 10, 0)
             pygame.draw.circle(screen, red, p(mc_x, mc_y), 10, 0)
+            # render text
+            label = myfont.render("battery: %.3fV" % (battery / 1000.0,), 1, (255,125,125))
+            screen.blit(label, (0, 0))
 
         # update the screen
         pygame.display.update()
