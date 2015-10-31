@@ -184,6 +184,11 @@ def run():
             # render text
             label = myfont.render("battery: %.3fV" % (battery / 1000.0,), 1, (255,125,125))
             screen.blit(label, (0, 0))
+            if automatic == 1:
+                label = myfont.render("automatic: yes", 1, (255,0,0))
+            else:
+                label = myfont.render("automatic: no", 1, (0,255,0))
+            screen.blit(label, (0, 30))
 
         # update the screen
         pygame.display.update()
