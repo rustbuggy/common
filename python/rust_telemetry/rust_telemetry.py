@@ -62,6 +62,7 @@ def p(x, y):
 def run():
     time = left = right = front_left = front_right = front = mc_x = mc_y = mc_dist = mc_angle = steerPwm = speedPwm = battery = 0
     lx = ly = flx = fly = fx = fy = frx = fry = rx = ry = 0
+    accel_x = accel_y = accel_z = 0.0
 
     pygame.init()
     pygame.display.set_caption("RustTelemetry")
@@ -140,7 +141,7 @@ def run():
         for packet in parser:
             header, = struct.unpack("<B", packet[:1])
             if header == BC_TELEMETRY:
-                time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, automatic, steerPwm, speedPwm, battery = struct.unpack("<IiiiiiiiiiBBBH", packet[1:])
+                time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, accel_x, accel_y, accel_z, automatic, steerPwm, speedPwm, battery = struct.unpack("<IiiiiiiiiifffBBBH", packet[1:])
                 left /= FIX_DIV
                 front_left /= FIX_DIV
                 front /= FIX_DIV
@@ -168,7 +169,9 @@ def run():
                 ry = a2 - SIDE_Y_OFFSET
 
                 #print("battery: %u" % battery)
-                print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
+                #print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
+                print("accel: %f %f %f" % (accel_x, accel_y, accel_z))
+                
                 sys.stdout.flush()
 
         # erase the screen
@@ -189,6 +192,8 @@ def run():
             else:
                 label = myfont.render("automatic: no", 1, (0,255,0))
             screen.blit(label, (0, 30))
+            label = myfont.render("accel: %0.3f %0.3f %0.3f" % (accel_x, accel_y, accel_z), 1, (125,125,255))
+            screen.blit(label, (0, 60))
 
         # update the screen
         pygame.display.update()
