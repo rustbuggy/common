@@ -48,8 +48,8 @@ BC_TELEMETRY = 0x01
 CB_MOTOR_COMMAND = 0x02
 
 AUTOMATIC_DEFAULT = 0
-STEERING_PWM_DEFAULT = 90
-DRIVING_PWM_DEFAULT = 92
+STEERING_PWM_DEFAULT = 80
+DRIVING_PWM_DEFAULT = 90
 
 def send_packet(data):
     data = hdlc.add_checksum(data)
@@ -60,9 +60,10 @@ def p(x, y):
     return (int(SCR_WIDTH / 2 + 3*x), int(SCR_HEIGHT - 3*y - SCR_HEIGHT / 8))
 
 def run():
-    time = left = right = front_left = front_right = front = mc_x = mc_y = mc_dist = mc_angle = steerPwm = speedPwm = battery = 0
+    time = cycles = left = right = front_left = front_right = front = mc_x = mc_y = mc_dist = mc_angle = steerPwm = speedPwm = battery = 0
     lx = ly = flx = fly = fx = fy = frx = fry = rx = ry = 0
-    accel_x = accel_y = accel_z = 0.0
+    accel_x = accel_y = accel_z = speed_x = speed_y = speed_z = 0.0
+    last_time = last_cycles = 0
 
     pygame.init()
     pygame.display.set_caption("RustTelemetry")
@@ -87,6 +88,10 @@ def run():
                     automatic = 0 if automatic == 1 else 1
                     steering_pwm = STEERING_PWM_DEFAULT # center
                     drive_pwm = DRIVING_PWM_DEFAULT # stop
+                    
+                    motor_command = struct.pack("<BBBB", CB_MOTOR_COMMAND, automatic, steering_pwm, drive_pwm)
+                    send_packet(motor_command)
+                    print(automatic, steering_pwm, drive_pwm)
             elif event.type == KEYDOWN:
                 if event.key == K_RIGHT:
                     automatic = 0
@@ -103,19 +108,21 @@ def run():
                 elif event.key == K_UP:
                     automatic = 0
                     drive_pwm += 1
-                    #drive_pwm = 105
                     if drive_pwm > 180:
                         drive_pwm = 180
                     print 'drive pwm %u' % drive_pwm
                 elif event.key == K_DOWN:
                     automatic = 0
                     drive_pwm -= 1
-                    #drive_pwm = 60
                     if drive_pwm < 0:
                         drive_pwm = 0
                     print 'drive pwm %u' % drive_pwm
+                elif event.key == K_p:
+                    automatic = 0
+                    drive_pwm = 105
+                    print 'drive pwm %u' % drive_pwm
                 elif event.key == K_SPACE:
-                    pass # handled in event.type == KEYUP
+                    continue # handled in event.type == KEYUP
                 elif event.key == K_ESCAPE:
                     running = False
                     #kill
@@ -129,9 +136,9 @@ def run():
                     steering_pwm = STEERING_PWM_DEFAULT # center
                     drive_pwm = DRIVING_PWM_DEFAULT # stop
 
-                #time.sleep(0.05)
                 motor_command = struct.pack("<BBBB", CB_MOTOR_COMMAND, automatic, steering_pwm, drive_pwm)
                 send_packet(motor_command)
+                print(automatic, steering_pwm, drive_pwm)
 
         # read serial
         data = s.read(20)
@@ -141,7 +148,9 @@ def run():
         for packet in parser:
             header, = struct.unpack("<B", packet[:1])
             if header == BC_TELEMETRY:
-                time, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, accel_x, accel_y, accel_z, automatic, steerPwm, speedPwm, battery = struct.unpack("<IiiiiiiiiifffBBBH", packet[1:])
+                last_cycles = cycles
+                last_time = time
+                time, cycles, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, accel_x, accel_y, accel_z, speed_x, speed_y, speed_z, automatic, steerPwm, speedPwm, battery = struct.unpack("<IIiiiiiiiiiffffffBBBH", packet[1:])
                 left /= FIX_DIV
                 front_left /= FIX_DIV
                 front /= FIX_DIV
@@ -169,8 +178,10 @@ def run():
                 ry = a2 - SIDE_Y_OFFSET
 
                 #print("battery: %u" % battery)
-                #print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
-                print("accel: %f %f %f" % (accel_x, accel_y, accel_z))
+                if automatic:
+                    print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
+                #if math.sqrt(accel_x*accel_x + accel_y*accel_y + accel_z*accel_z) > 0.1:
+                #    print("%f\t%f %3u" % (accel_x, speed_x, speedPwm))
                 
                 sys.stdout.flush()
 
@@ -186,14 +197,20 @@ def run():
             pygame.draw.circle(screen, red, p(mc_x, mc_y), 10, 0)
             # render text
             label = myfont.render("battery: %.3fV" % (battery / 1000.0,), 1, (255,125,125))
-            screen.blit(label, (0, 0))
+            screen.blit(label, (10, 10))
             if automatic == 1:
                 label = myfont.render("automatic: yes", 1, (255,0,0))
             else:
                 label = myfont.render("automatic: no", 1, (0,255,0))
-            screen.blit(label, (0, 30))
-            label = myfont.render("accel: %0.3f %0.3f %0.3f" % (accel_x, accel_y, accel_z), 1, (125,125,255))
-            screen.blit(label, (0, 60))
+            screen.blit(label, (10, 40))
+            label = myfont.render("accel: %+0.4f %+0.4f %+0.4f" % (accel_x, accel_y, accel_z), 1, (125,125,255))
+            screen.blit(label, (10, 70))
+            label = myfont.render("speed: %+0.4f %+0.4f %+0.4f" % (speed_x, speed_y, speed_z), 1, (125,125,255))
+            screen.blit(label, (10, 100))
+            label = myfont.render("cycles per millisecond: %0.2f" % (float(cycles - last_cycles) / float(time - last_time)), 1, (125,255,125))
+            screen.blit(label, (10, 130))
+            label = myfont.render("steer: %3u drive: %3u" % (steerPwm, speedPwm), 1, (255,125,255))
+            screen.blit(label, (10, SCR_HEIGHT - 30))
 
         # update the screen
         pygame.display.update()
