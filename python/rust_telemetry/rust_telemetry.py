@@ -48,7 +48,7 @@ BC_TELEMETRY = 0x01
 CB_MOTOR_COMMAND = 0x02
 
 AUTOMATIC_DEFAULT = 0
-STEERING_PWM_DEFAULT = 80
+STEERING_PWM_DEFAULT = 90
 DRIVING_PWM_DEFAULT = 90
 
 def send_packet(data):
@@ -178,8 +178,8 @@ def run():
                 ry = a2 - SIDE_Y_OFFSET
 
                 #print("battery: %u" % battery)
-                if automatic:
-                    print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
+                #if automatic:
+                print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
                 #if math.sqrt(accel_x*accel_x + accel_y*accel_y + accel_z*accel_z) > 0.1:
                 #    print("%f\t%f %3u" % (accel_x, speed_x, speedPwm))
                 

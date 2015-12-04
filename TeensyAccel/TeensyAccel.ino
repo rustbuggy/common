@@ -83,11 +83,6 @@ void loop()
   if (imu->IMURead()) {                                // get the latest data if ready yet
     imuData = imu->getIMUData();
 
-    if ((currTime - lastDisplay) >= DISPLAY_INTERVAL) {
-      lastDisplay = currTime;
-      Serial3.println(RTMath::displayRadians("Accel:", imuData.accel));
-    }
-
     //  do gravity rotation and subtraction
     // create the conjugate of the pose
     fusedConjugate = imuData.fusionQPose.conjugate();
@@ -103,14 +98,26 @@ void loop()
 
     sampleCount++;
     if ((delta = currTime - lastRate) >= 1000) {
-      Serial3.print("Sample rate: "); Serial3.print(sampleCount);
+      //Serial3.print("Sample rate: "); Serial3.print(sampleCount);
       if (!imu->IMUGyroBiasValid())
-        Serial3.println(", calculating gyro bias");
+      {
+        //Serial3.println(", calculating gyro bias");
+      }
       else
-        Serial3.println();
+      {
+        //Serial3.println();
+      }
 
       sampleCount = 0;
       lastRate = currTime;
+    }
+
+    if ((currTime - lastDisplay) >= DISPLAY_INTERVAL) {
+      lastDisplay = currTime;
+      //Serial3.println(RTMath::displayRadians("Accel:", imuData.accel));
+      //Serial3.println(RTMath::display("rotatedGravity:", rotatedGravity));
+      if (realAccel.length() > 0.1)
+        Serial3.println(RTMath::displayRadians("Accel:", realAccel));
     }
 
     /*
