@@ -64,6 +64,7 @@ def run():
     lx = ly = flx = fly = fx = fy = frx = fry = rx = ry = 0
     accel_x = accel_y = accel_z = speed_x = speed_y = speed_z = 0.0
     last_time = last_cycles = 0
+    state = 0
 
     pygame.init()
     pygame.display.set_caption("RustTelemetry")
@@ -150,7 +151,7 @@ def run():
             if header == BC_TELEMETRY:
                 last_cycles = cycles
                 last_time = time
-                time, cycles, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, accel_x, accel_y, accel_z, speed_x, speed_y, speed_z, automatic, steerPwm, speedPwm, battery = struct.unpack("<IIiiiiiiiiiffffffBBBH", packet[1:])
+                time, cycles, left, right, front_left, front_right, front, mc_x, mc_y, mc_dist, mc_angle, accel_x, accel_y, accel_z, speed_x, speed_y, speed_z, automatic, steerPwm, speedPwm, battery, state = struct.unpack("<IIiiiiiiiiiffffffBBBHB", packet[1:])
                 left /= FIX_DIV
                 front_left /= FIX_DIV
                 front /= FIX_DIV
@@ -178,8 +179,8 @@ def run():
                 ry = a2 - SIDE_Y_OFFSET
 
                 #print("battery: %u" % battery)
-                #if automatic:
-                print("l:%.2f fl:%.2f f:%.2f fr:%.2f r:%.2f mc(%.f,%.2f;%.2f,%.2f %3u %3u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm))
+                if automatic:
+                    print("%.2f %.2f %.2f %.2f %.2f (%.f,%.2f;%.2f,%.2f %3u %3u %u)" % (left, front_left, front, front_right, right, mc_x, mc_y, mc_dist, mc_angle, steerPwm, speedPwm, state))
                 #if math.sqrt(accel_x*accel_x + accel_y*accel_y + accel_z*accel_z) > 0.1:
                 #    print("%f\t%f %3u" % (accel_x, speed_x, speedPwm))
                 
